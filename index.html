@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Love You Teacher - Arcade Maze</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #000000; /* Simsiyah Arka Plan */
+            --wall-color: #000000; /* Duvar İçi Siyah */
+            --wall-border: #1919A6; /* Koyu Neon Mavi Çerçeve */
+            --wall-glow: #4169E1; /* Parlak Neon Mavi Yansıma */
+            --path-color: #000000; /* Yol Siyah */
+            --text-color: #FFD700; /* Altın Sarısı Metin */
+            --ui-bg: rgba(25, 25, 166, 0.3); /* Arayüz Arka Planı */
+        }
+
+        body {
+            /* Arcade tarzı piksel fontu */
+            font-family: 'Press Start 2P', cursive;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            text-align: center;
+            margin: 0;
+            padding: 10px;
+            touch-action: manipulation;
+            /* Hafif bir tarama çizgisi efekti (isteğe bağlı) */
+            background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0.2) 1px, transparent 1px, transparent 2px);
+        }
+
+        h1 { 
+            text-transform: uppercase; 
+            line-height: 1.5;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px var(--wall-border);
+            font-size: 24px;
+        }
+        
+        #game-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .header-info {
+            font-size: 14px;
+            margin-bottom: 20px;
+            background-color: var(--ui-bg);
+            padding: 15px;
+            border: 3px solid var(--wall-border);
+            display: inline-block;
+            box-shadow: 0 0 10px var(--wall-glow);
+        }
+        #score-board { color: #FFFFFF; margin-top: 10px; }
+        
+        /* Labirent Izgarası - 21x21 */
+        #maze {
+            display: grid;
+            grid-template-columns: repeat(21, 25px);
+            grid-template-rows: repeat(21, 25px);
+            gap: 0px;
+            justify-content: center;
+            margin: 0 auto;
+            background-color: var(--bg-color);
+            border: 3px solid var(--wall-border);
+            box-shadow: 0 0 15px var(--wall-glow);
+        }
+
+        .cell {
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        /* PAC-MAN TARZI DUVAR GÖRÜNÜMÜ */
+        .wall {
+            background-color: var(--wall-color);
+            /* Çift çizgili neon çerçeve efekti */
+            box-shadow: inset 0 0 0 2px var(--wall-border), 0 0 5px var(--wall-glow);
+            border-radius: 2px; /* Köşeleri hafif yumuşat */
+        }
+        
+        .path { background-color: var(--path-color); }
+        .exit { 
+            background-color: #000;
+            border: 2px solid #FF4500;
+            color: #FF4500;
+            text-shadow: 0 0 5px #FF4500;
+        } 
+        
+        /* Başlangıç Butonları */
+        .btn {
+            padding: 15px 25px;
+            font-size: 14px;
+            margin: 15px;
+            cursor: pointer;
+            border: 3px solid var(--wall-border);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: inherit;
+            transition: 0.2s;
+            box-shadow: 5px 5px var(--wall-border);
+        }
+        .btn:hover { 
+            transform: translate(2px, 2px);
+            box-shadow: 3px 3px var(--wall-border);
+            background-color: var(--ui-bg);
+        }
+
+        /* Pop-up Mesajları */
+        #popup {
+            display: none;
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.95);
+            color: var(--text-color);
+            padding: 25px;
+            font-size: 16px;
+            line-height: 1.5;
+            z-index: 1000;
+            text-align: center;
+            border: 4px solid var(--wall-border);
+            width: 80%;
+            box-shadow: 0 0 20px var(--wall-glow);
+            text-shadow: 2px 2px var(--wall-border);
+        }
+
+        /* --- MOBİL KONTROLLER --- */
+        #mobile-controls {
+            display: none;
+            margin-top: 25px;
+            user-select: none;
+        }
+
+        .control-row { display: flex; justify-content: center; }
+        
+        .ctrl-btn {
+            width: 60px;
+            height: 60px;
+            background-color: var(--ui-bg);
+            border: 3px solid var(--wall-border);
+            margin: 5px;
+            color: var(--text-color);
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 3px 3px var(--wall-border);
+        }
+        .ctrl-btn:active { 
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px var(--wall-border);
+        }
+
+        @media (pointer: coarse) {
+            #mobile-controls { display: block; }
+            #pc-instructions { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen" style="padding: 30px; border: 4px solid var(--wall-border); display: inline-block; margin-top: 30px; box-shadow: 0 0 15px var(--wall-glow);">
+        <h1>Love You Teacher</h1>
+        <p style="font-size: 14px; margin-bottom: 20px;">ARCADE MAZE</p>
+        <p style="font-size: 12px; line-height: 1.5;">Find 5 students lost in the neon maze!</p>
+        <div style="margin-top: 30px;">
+            <button class="btn" onclick="startGame('☁️')">Pobmek ☁️</button>
+            <button class="btn" onclick="startGame('☀️')">Solar ☀️</button>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div class="header-info">
+            <div id="teacher-name"></div>
+            <div id="score-board">STUDENTS: <span id="score">0</span>/5</div>
+        </div>
+        
+        <div id="maze"></div>
+        
+        <p id="pc-instructions" style="font-size: 12px; margin-top: 15px; color: var(--wall-glow);">USE W, A, S, D OR ARROW KEYS</p>
+
+        <div id="mobile-controls">
+            <div class="control-row">
+                <div class="ctrl-btn" onclick="handleMobileMove('up')">↑</div>
+            </div>
+            <div class="control-row">
+                <div class="ctrl-btn" onclick="handleMobileMove('left')">←</div>
+                <div class="ctrl-btn" style="visibility: hidden; border: none; box-shadow: none;"></div>
+                <div class="ctrl-btn" onclick="handleMobileMove('right')">→</div>
+            </div>
+            <div class="control-row">
+                <div class="ctrl-btn" onclick="handleMobileMove('down')">↓</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="popup"></div>
+
+    <script>
+        let player = { x: 1, y: 1, symbol: '' };
+        let studentsCollected = 0;
+        let gameOver = false;
+        let pathHistory = []; 
+
+        // 0: Path, 1: Wall, 2: Student, 3: Exit
+        // KARMAŞIK LABİRENT HARİTASI (21x21)
+        const initialMap = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,2,1],
+            [1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1],
+            [1,0,1,0,0,0,1,0,0,0,1,0,1,0,0,0,1,0,0,0,1],
+            [1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1,1,1],
+            [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,1],
+            [1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,0,1],
+            [1,2,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+            [1,0,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1],
+            [1,0,0,0,0,0,1,0,1,0,0,0,1,0,1,0,0,0,0,0,1],
+            [1,0,1,1,1,1,1,0,1,0,1,0,1,0,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,1],
+            [1,1,1,1,1,0,1,0,1,1,1,0,1,0,1,0,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,2,1,0,1],
+            [1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1],
+            [1,0,1,2,0,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,1],
+            [1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1],
+            [1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,3,0,0,0,1,0,0,0,2,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+        
+        let map = JSON.parse(JSON.stringify(initialMap));
+
+        function startGame(characterSymbol) {
+            player.symbol = characterSymbol;
+            player.x = 1; 
+            player.y = 1;
+            pathHistory = [{x: player.x, y: player.y}];
+            
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            
+            document.getElementById('teacher-name').innerText = characterSymbol === '☁️' ? 'TEACHER: POBMEK ☁️' : 'TEACHER: SOLAR ☀️';
+            
+            drawMaze();
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        function showPopup(msg, duration = 2000, callback = null) {
+            const popup = document.getElementById('popup');
+            popup.innerText = msg;
+            popup.style.display = 'block';
+            
+            setTimeout(() => {
+                popup.style.display = 'none';
+                if(callback) callback();
+            }, duration);
+        }
+
+        function drawMaze() {
+            const mazeDiv = document.getElementById('maze');
+            mazeDiv.innerHTML = '';
+
+            for (let y = 0; y < map.length; y++) {
+                for (let x = 0; x < map[y].length; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    
+                    let isTail = false;
+                    for(let i = 1; i <= studentsCollected; i++) {
+                        if (pathHistory[i] && pathHistory[i].x === x && pathHistory[i].y === y) {
+                            isTail = true;
+                            break;
+                        }
+                    }
+
+                    if (x === player.x && y === player.y) {
+                        cell.innerText = player.symbol;
+                        cell.classList.add('path');
+                    } else if (isTail) {
+                        cell.innerText = '🧒'; 
+                        cell.classList.add('path');
+                    } else if (map[y][x] === 1) {
+                        cell.classList.add('wall');
+                    } else if (map[y][x] === 0) {
+                        cell.classList.add('path');
+                    } else if (map[y][x] === 2) {
+                        cell.innerText = '🧒'; 
+                        cell.classList.add('path');
+                    } else if (map[y][x] === 3) {
+                        cell.classList.add('exit');
+                        cell.innerText = '🚪';
+                    }
+                    mazeDiv.appendChild(cell);
+                }
+            }
+        }
+
+        function handleKeyPress(e) {
+            if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight", "w", "a", "s", "d"].indexOf(e.key.toLowerCase()) > -1) {
+                e.preventDefault();
+                let dir = '';
+                if (e.key === 'ArrowUp' || e.key === 'w') dir = 'up';
+                if (e.key === 'ArrowDown' || e.key === 's') dir = 'down';
+                if (e.key === 'ArrowLeft' || e.key === 'a') dir = 'left';
+                if (e.key === 'ArrowRight' || e.key === 'd') dir = 'right';
+                attemptMove(dir);
+            }
+        }
+
+        function handleMobileMove(direction) {
+            attemptMove(direction);
+        }
+
+        function attemptMove(direction) {
+            if (gameOver) return;
+
+            let newX = player.x;
+            let newY = player.y;
+
+            if (direction === 'up') newY--;
+            if (direction === 'down') newY++;
+            if (direction === 'left') newX--;
+            if (direction === 'right') newX++;
+
+            if (map[newY][newX] !== 1) {
+                
+                pathHistory.unshift({x: newX, y: newY});
+                if (pathHistory.length > studentsCollected + 1) {
+                    pathHistory.pop(); 
+                }
+
+                player.x = newX;
+                player.y = newY;
+
+                // ÖĞRENCİ TOPLAMA MESAJI GÜNCELLENDİ
+                if (map[newY][newX] === 2) {
+                    studentsCollected++;
+                    map[newY][newX] = 0;
+                    document.getElementById('score').innerText = studentsCollected;
+                    
+                    showPopup("CLASSES ARE ABOUT TO START!", 1500); 
+                }
+
+                // OYUN SONU MESAJI GÜNCELLENDİ
+                if (map[newY][newX] === 3) {
+                    if (studentsCollected >= 5) {
+                        endGame("LOVE YOU TEACHER IS COMING!", true);
+                    } else {
+                        showPopup("FIND ALL 5 STUDENTS FIRST!", 1500);
+                    }
+                }
+
+                drawMaze();
+            }
+        }
+
+        function endGame(message, isWin) {
+            gameOver = true;
+            showPopup(message, 4000, () => {
+                location.reload(); 
+            });
+        }
+    </script>
+</body>
+</html>
