@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Love You Teacher - Arcade Maze</title>
+    <title>Love You Teacher - Arcade Games</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -30,12 +30,13 @@
         h1 { 
             text-transform: uppercase; 
             line-height: 1.5;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             text-shadow: 3px 3px var(--wall-border);
             font-size: 24px;
         }
         
-        #game-container {
+        /* Arayüz Kutuları */
+        #start-screen, #maze-container, #catch-container {
             display: none;
             margin-top: 20px;
         }
@@ -49,8 +50,9 @@
             display: inline-block;
             box-shadow: 0 0 10px var(--wall-glow);
         }
-        #score-board { color: #FFFFFF; margin-top: 10px; }
+        .score-board { color: #FFFFFF; margin-top: 10px; }
         
+        /* LABİRENT STİLLERİ */
         #maze {
             display: grid;
             grid-template-columns: repeat(21, 25px);
@@ -86,10 +88,50 @@
             text-shadow: 0 0 5px #FF4500;
         } 
         
+        /* YAKALAMA OYUNU STİLLERİ */
+        #catch-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            grid-template-rows: repeat(3, 80px);
+            gap: 15px;
+            justify-content: center;
+            margin: 20px auto;
+        }
+
+        .desk {
+            background-color: var(--wall-color);
+            border: 3px solid var(--wall-border);
+            box-shadow: 0 0 10px var(--wall-glow);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 45px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .student-mole {
+            display: none;
+            transition: transform 0.1s;
+        }
+
+        .student-mole.active {
+            display: block;
+            animation: popUp 0.2s ease-out;
+        }
+
+        @keyframes popUp {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+
+        /* BUTON VE MENÜ STİLLERİ */
         .btn {
-            padding: 15px 25px;
-            font-size: 14px;
-            margin: 15px;
+            padding: 15px 20px;
+            font-size: 12px;
+            margin: 10px;
             cursor: pointer;
             border: 3px solid var(--wall-border);
             background-color: var(--bg-color);
@@ -160,27 +202,32 @@
 </head>
 <body>
 
-    <div id="start-screen" style="padding: 30px; border: 4px solid var(--wall-border); display: inline-block; margin-top: 30px; box-shadow: 0 0 15px var(--wall-glow);">
+    <div id="start-screen" style="display: inline-block; padding: 20px; border: 4px solid var(--wall-border); margin-top: 30px; box-shadow: 0 0 15px var(--wall-glow);">
         <h1>Love You Teacher</h1>
-        <p style="font-size: 14px; margin-bottom: 20px;">ARCADE MAZE</p>
-        <p style="font-size: 12px; line-height: 1.5;">Find 5 students lost in the neon maze!</p>
-        <div style="margin-top: 30px;">
-            <button class="btn" onclick="startGame('☁️')">Pobmek ☁️</button>
-            <button class="btn" onclick="startGame('☀️')">Solar ☀️</button>
-            <button class="btn" onclick="startGame('❤️')">Domiia ❤️</button>
+        <p style="font-size: 12px; color: var(--wall-glow); margin-bottom: 20px;">CHOOSE YOUR GAME</p>
+        
+        <div style="border-top: 2px dashed var(--wall-border); padding-top: 20px; margin-bottom: 10px;">
+            <p style="font-size: 14px; margin-bottom: 10px;">🎮 GAME 1: ARCADE MAZE</p>
+            <p style="font-size: 10px; margin-bottom: 15px;">Select a character and find 5 students!</p>
+            <button class="btn" onclick="startMaze('☁️')">Pobmek ☁️</button>
+            <button class="btn" onclick="startMaze('☀️')">Solar ☀️</button>
+            <button class="btn" onclick="startMaze('❤️')">Domiia ❤️</button>
+        </div>
+
+        <div style="border-top: 2px dashed var(--wall-border); padding-top: 20px; margin-top: 10px;">
+            <p style="font-size: 14px; margin-bottom: 10px;">🏃‍♂️ GAME 2: CATCH EM ALL</p>
+            <p style="font-size: 10px; margin-bottom: 15px;">Catch 15 hiding students quickly!</p>
+            <button class="btn" onclick="startCatchGame()" style="width: 80%;">PLAY CATCH GAME</button>
         </div>
     </div>
 
-    <div id="game-container">
+    <div id="maze-container">
         <div class="header-info">
             <div id="teacher-name"></div>
-            <div id="score-board">STUDENTS: <span id="score">0</span>/5</div>
+            <div class="score-board">STUDENTS: <span id="maze-score">0</span>/5</div>
         </div>
-        
         <div id="maze"></div>
-        
         <p id="pc-instructions" style="font-size: 12px; margin-top: 15px; color: var(--wall-glow);">USE W, A, S, D OR ARROW KEYS</p>
-
         <div id="mobile-controls">
             <div class="control-row">
                 <div class="ctrl-btn" onclick="handleMobileMove('up')">↑</div>
@@ -196,16 +243,114 @@
         </div>
     </div>
 
+    <div id="catch-container">
+        <div class="header-info">
+            <div>TEACHER: CATCHER ⚡</div>
+            <div class="score-board">CAUGHT: <span id="catch-score">0</span>/15</div>
+        </div>
+        <div id="catch-grid"></div>
+        <p style="font-size: 12px; margin-top: 15px; color: var(--wall-glow);">TAP ON THE STUDENTS QUICKLY!</p>
+        <button class="btn" onclick="location.reload()" style="margin-top:20px;">BACK TO MENU</button>
+    </div>
+
     <div id="popup"></div>
 
     <script>
+        let gameOver = false;
+
+        // ---- ORTAK FONKSİYONLAR ----
+        function showPopup(msg, duration = 2000, callback = null) {
+            const popup = document.getElementById('popup');
+            popup.innerHTML = msg; 
+            popup.style.display = 'block';
+            setTimeout(() => {
+                popup.style.display = 'none';
+                if(callback) callback();
+            }, duration);
+        }
+
+        function triggerWin() {
+            gameOver = true;
+            let bitisMesaji = "Love You Teacher 💙❤️💛💚<br><br>🗓️ starts on 14 March 2026<br>🕣 Every Saturday at 20:30<br>📺 airing on GMM25<br>📱 Watch the rerun only on the oneD app<br><br><img src='IMG_3908.jpeg' style='width: 100%; max-width: 250px; border-radius: 10px; border: 3px solid #1919A6;'>";
+            showPopup(bitisMesaji, 15000, () => {
+                location.reload(); 
+            });
+        }
+
+
+        // ==========================================
+        //         OYUN 2: ÖĞRENCİ YAKALAMA
+        // ==========================================
+        let catchScore = 0;
+        let catchInterval;
+
+        function startCatchGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('catch-container').style.display = 'block';
+            catchScore = 0;
+            document.getElementById('catch-score').innerText = catchScore;
+            
+            createCatchGrid();
+            // Her 700 milisaniyede bir yeni öğrenci çıkar
+            catchInterval = setInterval(spawnStudent, 700);
+        }
+
+        function createCatchGrid() {
+            const grid = document.getElementById('catch-grid');
+            grid.innerHTML = '';
+            for(let i=0; i<9; i++) {
+                const desk = document.createElement('div');
+                desk.className = 'desk';
+                desk.onclick = () => catchStudent(i);
+                
+                const student = document.createElement('div');
+                student.className = 'student-mole';
+                student.innerText = '🧒';
+                student.id = 'student-' + i;
+                
+                desk.appendChild(student);
+                grid.appendChild(desk);
+            }
+        }
+
+        function spawnStudent() {
+            if (gameOver) return;
+            
+            // Açık olanları gizle
+            const allStudents = document.querySelectorAll('.student-mole');
+            allStudents.forEach(s => s.classList.remove('active'));
+
+            // Rastgele bir sıra seç
+            const randomDesk = Math.floor(Math.random() * 9);
+            const student = document.getElementById('student-' + randomDesk);
+            student.classList.add('active');
+        }
+
+        function catchStudent(index) {
+            if (gameOver) return;
+            const student = document.getElementById('student-' + index);
+            
+            if (student.classList.contains('active')) {
+                student.classList.remove('active'); // Yakalandı!
+                catchScore++;
+                document.getElementById('catch-score').innerText = catchScore;
+                
+                if (catchScore >= 15) {
+                    clearInterval(catchInterval);
+                    triggerWin();
+                }
+            }
+        }
+
+
+        // ==========================================
+        //         OYUN 1: ARCADE LABİRENT
+        // ==========================================
         let player = { x: 1, y: 1, symbol: '' };
         let studentsCollected = 0;
-        let gameOver = false;
         let pathHistory = []; 
         let map = []; 
 
-        // YENİ HARİTA 1: POBMEK (Geniş odalar ve simetrik yapı)
         const mapPobmek = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,0,0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,2,1],
@@ -230,7 +375,6 @@
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
 
-        // YENİ HARİTA 2: SOLAR (Kusursuz akan Yılan/Zigzag labirent)
         const mapSolar = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -255,7 +399,6 @@
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
 
-        // HARİTA 3: DOMIIA (Eski hali, merkez odalı)
         const mapDomiia = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
@@ -280,14 +423,14 @@
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
 
-        function startGame(characterSymbol) {
+        function startMaze(characterSymbol) {
             player.symbol = characterSymbol;
             player.x = 1; 
             player.y = 1;
             pathHistory = [{x: player.x, y: player.y}];
             
             document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('game-container').style.display = 'block';
+            document.getElementById('maze-container').style.display = 'block';
             
             if (characterSymbol === '☁️') {
                 document.getElementById('teacher-name').innerText = 'TEACHER: POBMEK ☁️';
@@ -302,17 +445,6 @@
             
             drawMaze();
             document.addEventListener('keydown', handleKeyPress);
-        }
-
-        function showPopup(msg, duration = 2000, callback = null) {
-            const popup = document.getElementById('popup');
-            popup.innerHTML = msg; 
-            popup.style.display = 'block';
-            
-            setTimeout(() => {
-                popup.style.display = 'none';
-                if(callback) callback();
-            }, duration);
         }
 
         function drawMaze() {
@@ -394,14 +526,13 @@
                 if (map[newY][newX] === 2) {
                     studentsCollected++;
                     map[newY][newX] = 0;
-                    document.getElementById('score').innerText = studentsCollected;
+                    document.getElementById('maze-score').innerText = studentsCollected;
                     showPopup("CLASSES ARE ABOUT TO START!", 1500); 
                 }
 
                 if (map[newY][newX] === 3) {
                     if (studentsCollected >= 5) {
-                        let bitisMesaji = "Love You Teacher 💙❤️💛💚<br><br>🗓️ starts on 14 March 2026<br>🕣 Every Saturday at 20:30<br>📺 airing on GMM25<br>📱 Watch the rerun only on the oneD app<br><br><img src='IMG_3908.jpeg' style='width: 100%; max-width: 250px; border-radius: 10px; border: 3px solid #1919A6;'>";
-                        endGame(bitisMesaji, true);
+                        triggerWin(); // Oyunu bitir ve aynı mesajı göster
                     } else {
                         showPopup("FIND ALL 5 STUDENTS FIRST!", 1500);
                     }
@@ -409,14 +540,6 @@
 
                 drawMaze();
             }
-        }
-
-        function endGame(message, isWin) {
-            gameOver = true;
-            // Ekranda kalma süresini tam istediğin gibi 15 saniye (15000 ms) yaptım
-            showPopup(message, 15000, () => {
-                location.reload(); 
-            });
         }
     </script>
 </body>
