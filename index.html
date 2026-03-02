@@ -7,17 +7,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #000000; /* Simsiyah Arka Plan */
-            --wall-color: #000000; /* Duvar İçi Siyah */
-            --wall-border: #1919A6; /* Koyu Neon Mavi Çerçeve */
-            --wall-glow: #4169E1; /* Parlak Neon Mavi Yansıma */
-            --path-color: #000000; /* Yol Siyah */
-            --text-color: #FFD700; /* Altın Sarısı Metin */
-            --ui-bg: rgba(25, 25, 166, 0.3); /* Arayüz Arka Planı */
+            --bg-color: #000000;
+            --wall-color: #000000;
+            --wall-border: #1919A6;
+            --wall-glow: #4169E1;
+            --path-color: #000000;
+            --text-color: #FFD700;
+            --ui-bg: rgba(25, 25, 166, 0.3);
         }
 
         body {
-            /* Arcade tarzı piksel fontu */
             font-family: 'Press Start 2P', cursive;
             background-color: var(--bg-color);
             color: var(--text-color);
@@ -25,7 +24,6 @@
             margin: 0;
             padding: 10px;
             touch-action: manipulation;
-            /* Hafif bir tarama çizgisi efekti (isteğe bağlı) */
             background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0.2) 1px, transparent 1px, transparent 2px);
         }
 
@@ -53,7 +51,6 @@
         }
         #score-board { color: #FFFFFF; margin-top: 10px; }
         
-        /* Labirent Izgarası - 21x21 */
         #maze {
             display: grid;
             grid-template-columns: repeat(21, 25px);
@@ -75,12 +72,10 @@
             font-size: 16px;
         }
 
-        /* PAC-MAN TARZI DUVAR GÖRÜNÜMÜ */
         .wall {
             background-color: var(--wall-color);
-            /* Çift çizgili neon çerçeve efekti */
             box-shadow: inset 0 0 0 2px var(--wall-border), 0 0 5px var(--wall-glow);
-            border-radius: 2px; /* Köşeleri hafif yumuşat */
+            border-radius: 2px;
         }
         
         .path { background-color: var(--path-color); }
@@ -91,7 +86,6 @@
             text-shadow: 0 0 5px #FF4500;
         } 
         
-        /* Başlangıç Butonları */
         .btn {
             padding: 15px 25px;
             font-size: 14px;
@@ -110,7 +104,6 @@
             background-color: var(--ui-bg);
         }
 
-        /* Pop-up Mesajları */
         #popup {
             display: none;
             position: fixed;
@@ -130,7 +123,6 @@
             text-shadow: 2px 2px var(--wall-border);
         }
 
-        /* --- MOBİL KONTROLLER --- */
         #mobile-controls {
             display: none;
             margin-top: 25px;
@@ -174,6 +166,7 @@
         <div style="margin-top: 30px;">
             <button class="btn" onclick="startGame('☁️')">Pobmek ☁️</button>
             <button class="btn" onclick="startGame('☀️')">Solar ☀️</button>
+            <button class="btn" onclick="startGame('❤️')">Domiia ❤️</button>
         </div>
     </div>
 
@@ -209,10 +202,9 @@
         let studentsCollected = 0;
         let gameOver = false;
         let pathHistory = []; 
+        let map = []; 
 
-        // 0: Path, 1: Wall, 2: Student, 3: Exit
-        // KARMAŞIK LABİRENT HARİTASI (21x21)
-        const initialMap = [
+        const mapPobmek = [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,0,0,0,1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,2,1],
             [1,0,1,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1],
@@ -235,8 +227,54 @@
             [1,0,0,0,0,0,0,0,0,0,3,0,0,0,1,0,0,0,2,0,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ];
-        
-        let map = JSON.parse(JSON.stringify(initialMap));
+
+        const mapSolar = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,0,0,0,1,0,2,0,0,0,1,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,0,1,0,1,1,1,0,1,0,1,1,1,1,1,1],
+            [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1,0,0,2,0,1],
+            [1,1,1,0,1,1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1],
+            [1,0,0,0,0,0,0,2,0,1,0,0,0,0,0,0,0,1,0,0,1],
+            [1,0,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1],
+            [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1],
+            [1,0,0,0,1,0,0,0,0,0,0,0,2,0,0,0,1,0,0,0,1],
+            [1,0,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1],
+            [1,0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+            [1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1],
+            [1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,0,0,1,0,1],
+            [1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1],
+            [1,0,1,0,0,0,0,0,2,0,1,0,0,0,0,0,1,0,1,0,1],
+            [1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,0,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1],
+            [1,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
+
+        const mapDomiia = [
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+            [1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,1],
+            [1,0,1,0,1,0,1,1,1,0,1,0,1,1,1,0,1,0,1,0,1],
+            [1,0,1,0,0,0,1,2,1,0,0,0,1,2,1,0,0,0,1,0,1],
+            [1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,0,1,1,1,1,1,0,1,1,1,1,1,0,1,1,1,1,1],
+            [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1],
+            [1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,0,1],
+            [1,0,1,0,0,0,1,2,0,0,0,2,1,0,0,0,1,0,0,0,1],
+            [1,0,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0,1],
+            [1,0,0,0,1,0,0,0,1,3,1,0,0,0,1,0,0,0,1,0,1], 
+            [1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,1,0,1],
+            [1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0,1],
+            [1,0,1,0,1,1,1,0,1,0,1,0,1,1,1,0,1,0,1,0,1],
+            [1,0,0,0,1,2,1,0,0,0,0,0,1,0,1,0,0,0,1,0,1],
+            [1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1],
+            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        ];
 
         function startGame(characterSymbol) {
             player.symbol = characterSymbol;
@@ -247,7 +285,16 @@
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('game-container').style.display = 'block';
             
-            document.getElementById('teacher-name').innerText = characterSymbol === '☁️' ? 'TEACHER: POBMEK ☁️' : 'TEACHER: SOLAR ☀️';
+            if (characterSymbol === '☁️') {
+                document.getElementById('teacher-name').innerText = 'TEACHER: POBMEK ☁️';
+                map = JSON.parse(JSON.stringify(mapPobmek)); 
+            } else if (characterSymbol === '☀️') {
+                document.getElementById('teacher-name').innerText = 'TEACHER: SOLAR ☀️';
+                map = JSON.parse(JSON.stringify(mapSolar)); 
+            } else if (characterSymbol === '❤️') {
+                document.getElementById('teacher-name').innerText = 'TEACHER: DOMIIA ❤️';
+                map = JSON.parse(JSON.stringify(mapDomiia)); 
+            }
             
             drawMaze();
             document.addEventListener('keydown', handleKeyPress);
@@ -255,7 +302,7 @@
 
         function showPopup(msg, duration = 2000, callback = null) {
             const popup = document.getElementById('popup');
-            popup.innerText = msg;
+            popup.innerHTML = msg; 
             popup.style.display = 'block';
             
             setTimeout(() => {
@@ -340,19 +387,18 @@
                 player.x = newX;
                 player.y = newY;
 
-                // ÖĞRENCİ TOPLAMA MESAJI GÜNCELLENDİ
                 if (map[newY][newX] === 2) {
                     studentsCollected++;
                     map[newY][newX] = 0;
                     document.getElementById('score').innerText = studentsCollected;
-                    
                     showPopup("CLASSES ARE ABOUT TO START!", 1500); 
                 }
 
-                // OYUN SONU MESAJI GÜNCELLENDİ
                 if (map[newY][newX] === 3) {
                     if (studentsCollected >= 5) {
-                        endGame("LOVE YOU TEACHER IS COMING!", true);
+                        // İŞTE SENİN FOTOĞRAFIN BURADA GÖRÜNECEK!
+                        let bitisMesaji = "LOVE YOU TEACHER IS COMING!<br><br><img src='image.png' style='width: 100%; max-width: 250px; border-radius: 10px; border: 3px solid #1919A6;'>";
+                        endGame(bitisMesaji, true);
                     } else {
                         showPopup("FIND ALL 5 STUDENTS FIRST!", 1500);
                     }
@@ -364,7 +410,8 @@
 
         function endGame(message, isWin) {
             gameOver = true;
-            showPopup(message, 4000, () => {
+            // Fotoğraf ekranda daha uzun süre kalsın diye süreyi 5000 (5 saniye) yaptım
+            showPopup(message, 5000, () => {
                 location.reload(); 
             });
         }
